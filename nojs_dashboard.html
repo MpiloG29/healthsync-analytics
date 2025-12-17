@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HealthSync - No JS Dashboard</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .box { background: #f0f0f0; padding: 20px; margin: 10px 0; }
+        iframe { width: 100%; height: 300px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>�� HealthSync Dashboard (No JavaScript Needed)</h1>
+    
+    <div class="box">
+        <h2>Direct API Links:</h2>
+        <p><a href="http://localhost:8001/" target="_blank">API Root</a></p>
+        <p><a href="http://localhost:8001/health" target="_blank">Health Check</a></p>
+        <p><a href="http://localhost:8001/analytics" target="_blank">Analytics Data</a></p>
+        <p><a href="http://localhost:8001/docs" target="_blank">API Documentation</a></p>
+    </div>
+    
+    <div class="box">
+        <h2>API Test Results:</h2>
+        <iframe src="http://localhost:8001/"></iframe>
+        <iframe src="http://localhost:8001/analytics"></iframe>
+    </div>
+    
+    <div class="box">
+        <h2>Instructions:</h2>
+        <ol>
+            <li>Make sure FastAPI is running: <code>python -m uvicorn app:app --host 0.0.0.0 --port 8001</code></li>
+            <li>Click links above to test API</li>
+            <li>If links work, API is running correctly</li>
+            <li>If Simple Dashboard doesn't work, check browser console (F12)</li>
+        </ol>
+    </div>
+</body>
+</html>

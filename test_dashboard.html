@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HealthSync API Test</title>
+</head>
+<body>
+    <h1>HealthSync API Connectivity Test</h1>
+    <div id="status">Testing...</div>
+    <div id="analytics">Analytics: Loading...</div>
+    <div id="prediction">Prediction: Waiting...</div>
+    
+    <script>
+        const API_URL = 'http://localhost:8001';
+        
+        async function testAPI() {
+            try {
+                // Test 1: Analytics endpoint
+                const analyticsRes = await fetch(API_URL + '/analytics');
+                const analytics = await analyticsRes.json();
+                document.getElementById('analytics').innerHTML = 
+                    `Analytics: OK! Patients: ${analytics.total_patients}, Risk: ${analytics.avg_risk_score}`;
+                
+                // Test 2: Prediction endpoint
+                const predictionRes = await fetch(API_URL + '/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({age: 65, systolic_bp: 120})
+                });
+                const prediction = await predictionRes.json();
+                document.getElementById('prediction').innerHTML = 
+                    `Prediction: OK! Score: ${prediction.risk_score}, Level: ${prediction.risk_level}`;
+                
+                document.getElementById('status').innerHTML = 
+                    '<span style="color: green">✅ All API endpoints working!</span>';
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    `<span style="color: red">❌ Error: ${error.message}</span>`;
+            }
+        }
+        
+        testAPI();
+    </script>
+</body>
+</html>

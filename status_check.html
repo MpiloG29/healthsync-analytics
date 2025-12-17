@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HealthSync Status Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>HealthSync Status Check</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function checkServices() {
+            const results = document.getElementById('results');
+            
+            // Check FastAPI
+            try {
+                const apiRes = await fetch('http://localhost:8001/health');
+                const apiData = await apiRes.json();
+                results.innerHTML += `<div class="status success">✅ FastAPI: Running (${apiData.status})</div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="status error">❌ FastAPI: Failed (${error.message})</div>`;
+            }
+            
+            // Check Dashboard
+            try {
+                const dashRes = await fetch('http://localhost:8080/dashboard.html');
+                results.innerHTML += `<div class="status success">✅ Dashboard: Running (HTTP ${dashRes.status})</div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="status error">❌ Dashboard: Failed (${error.message})</div>`;
+            }
+            
+            // Check Analytics endpoint
+            try {
+                const analyticsRes = await fetch('http://localhost:8001/analytics');
+                const analyticsData = await analyticsRes.json();
+                results.innerHTML += `<div class="status success">✅ Analytics: ${analyticsData.total_patients} patients</div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="status error">❌ Analytics: Failed (${error.message})</div>`;
+            }
+        }
+        
+        checkServices();
+    </script>
+</body>
+</html>

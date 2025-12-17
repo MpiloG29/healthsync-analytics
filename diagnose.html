@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HealthSync Diagnostic</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background: #cfc; }
+        .fail { background: #fcc; }
+        pre { background: #eee; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Ì¥ç HealthSync Diagnostic</h1>
+    
+    <div id="tests"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:8001';
+        const testsDiv = document.getElementById('tests');
+        
+        async function runTest(name, fn) {
+            const div = document.createElement('div');
+            div.className = 'test';
+            div.innerHTML = `<strong>${name}</strong>: Running...`;
+            testsDiv.appendChild(div);
+            
+            try {
+                const result = await fn();
+                div.className += ' pass';
+                div.innerHTML = `<strong>${name}</strong>: ‚úÖ PASS - ${result}`;
+            } catch (error) {
+                div.className += ' fail';
+                div.innerHTML = `<strong>${name}</strong>: ‚ùå FAIL - ${error.message}`;
+                console.error(`${name} failed:`, error);
+            }
+        }
+        
+        async function runAllTests() {
+            await runTest('Browser Console', () => {
+                console.log('Test console message');
+                return 'Console available';
+            });
+            
+            await runTest('Fetch API Available', () => {
+                if (typeof fetch === 'function') return 'Yes';
+                throw new Error('Fetch API not available');
+            });
+            
+            await runTest('Connect to API', async () => {
+                const response = await fetch(API_URL + '/health', { mode: 'cors' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                return `Connected - ${data.status}`;
+            });
+            
+            await runTest('CORS Headers', async () => {
+                const response = await fetch(API_URL + '/health', { mode: 'cors' });
+                const corsHeader = response.headers.get('access-control-allow-origin');
+                if (!corsHeader) throw new Error('No CORS headers');
+                return `CORS: ${corsHeader}`;
+            });
+            
+            await runTest('Analytics Endpoint', async () => {
+                const response = await fetch(API_URL + '/analytics', { mode: 'cors' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                return `${data.total_patients} patients`;
+            });
+            
+            await runTest('Prediction Endpoint', async () => {
+                const response = await fetch(API_URL + '/predict', {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({age: 65, systolic_bp: 120})
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                return `${data.risk_score} score`;
+            });
+        }
+        
+        // Run tests
+        runAllTests();
+        
+        // Add debug info
+        const debug = document.createElement('pre');
+        debug.textContent = `Debug Info:
+API URL: ${API_URL}
+User Agent: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Cookies Enabled: ${navigator.cookieEnabled}
+Online: ${navigator.onLine}
+`;
+        testsDiv.appendChild(debug);
+    </script>
+</body>
+</html>

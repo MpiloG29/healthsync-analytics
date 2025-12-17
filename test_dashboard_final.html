@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Dashboard Connection Test</h2>
+    <div id="result">Testing...</div>
+    <script>
+        const API_URL = 'http://localhost:8001';
+        
+        async function testConnection() {
+            try {
+                // Test 1: Analytics
+                const analyticsRes = await fetch(API_URL + '/analytics');
+                if (!analyticsRes.ok) throw new Error(`HTTP ${analyticsRes.status}`);
+                const analytics = await analyticsRes.json();
+                
+                // Test 2: Prediction
+                const predictRes = await fetch(API_URL + '/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({age: 65, systolic_bp: 120})
+                });
+                if (!predictRes.ok) throw new Error(`HTTP ${predictRes.status}`);
+                const prediction = await predictRes.json();
+                
+                document.getElementById('result').innerHTML = 
+                    `<span style="color: green">✅ SUCCESS!</span><br>
+                     Analytics: ${analytics.total_patients} patients<br>
+                     Prediction: ${prediction.risk_score} score`;
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `<span style="color: red">❌ FAILED: ${error.message}</span>`;
+                console.error("Test error:", error);
+            }
+        }
+        
+        testConnection();
+    </script>
+</body>
+</html>
