@@ -37,10 +37,18 @@ Thumbs.db
 *.old
 *~
 
-# Test files
+# Temporary / generated files
+replace_script.py
 test_*.html
 diagnose.html
+diagnose_dashboard.sh
 status_check.html
+monitor.sh
+start_healthsync.sh
+setup.py
+simplest_dashboard.html
+nojs_dashboard.html
+requirements_simple.txt
 
 # Runtime
 *.pid

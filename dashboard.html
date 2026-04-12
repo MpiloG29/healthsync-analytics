@@ -1,119 +1,1579 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>HealthSync Dashboard</title>
-    <style>
-        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .card { background: #f5f5f5; padding: 20px; margin: 15px 0; border-radius: 8px; }
-        .success { color: green; }
-        .error { color: red; }
-        .loading { color: blue; }
-        input, button { padding: 10px; margin: 5px; font-size: 16px; }
-        button { background: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background: #45a049; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthSync Analytics — Advanced Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  /* Healthcare Trust — clean clinical whites & blues */
+  --bg:#F0F4F8;--surface:#FFFFFF;--card:#FFFFFF;--border:#CBD5E1;
+  /* Modern Tech-Healthcare — teal primary, navy contrasts */
+  --primary:#0D9488;--navy:#1E3A5F;
+  /* Cardiovascular Vitality — health green, deep red, coral empathy */
+  --green:#059669;--red:#DC2626;--purple:#F43F5E;
+  /* Alerts — bright orange (warnings), lime (positive) */
+  --yellow:#EA580C;--teal:#14B8A6;
+  /* Trust blue for info elements */
+  --blue:#2563EB;
+  /* Typography */
+  --text:#0F172A;--muted:#64748B;
+  /* Sidebar gradient: teal → dark navy */
+  --gradient:linear-gradient(135deg,#0F766E,#1E3A5F);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+/* Sidebar */
+#sidebar{width:220px;background:var(--navy);border-right:none;display:flex;flex-direction:column;padding:0;flex-shrink:0;position:fixed;height:100vh;z-index:100;overflow-y:auto;box-shadow:4px 0 16px rgba(15,23,42,.12)}
+.logo{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:var(--gradient);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(13,148,136,.4)}
+.logo-text{font-size:15px;font-weight:700;color:#fff}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.5)}
+.nav-section{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.35);padding:8px 16px 4px;text-transform:uppercase;letter-spacing:.8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;font-size:13px;color:rgba(255,255,255,.55)}
+.nav-item:hover{background:rgba(13,148,136,.15);color:#fff}
+.nav-item.active{background:rgba(13,148,136,.2);border-left-color:var(--teal);color:#fff}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.alert-badge{background:var(--red);color:#fff;font-size:10px;border-radius:10px;padding:1px 6px;margin-left:auto;font-weight:700}
+/* Main */
+#main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+/* Topbar */
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(15,23,42,.06)}
+.topbar-title{font-size:16px;font-weight:700;flex:1;color:var(--navy)}
+.patient-select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 3px rgba(13,148,136,.3)}
+.btn-primary:hover{background:#0F766E;box-shadow:0 2px 6px rgba(13,148,136,.4)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--navy);border-color:var(--primary)}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 1px 3px rgba(220,38,38,.3)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 1px 3px rgba(5,150,105,.3)}
+/* Content */
+#content{padding:24px;flex:1}
+.section{display:none}
+.section.active{display:block}
+/* Grid */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(15,23,42,.06)}
+.card-sm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(15,23,42,.06)}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(15,23,42,.06)}
+.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.metric-value{font-size:28px;font-weight:700;line-height:1}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--navy)}
+.card-title{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--navy)}
+/* Risk bar */
+.risk-bar{height:8px;border-radius:4px;background:#E2E8F0;overflow:hidden;margin:6px 0}
+.risk-fill{height:100%;border-radius:4px;transition:width 1s ease}
+/* Tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;margin:2px}
+.tag-red{background:rgba(220,38,38,.1);color:var(--red);border:1px solid rgba(220,38,38,.25)}
+.tag-yellow{background:rgba(234,88,12,.1);color:var(--yellow);border:1px solid rgba(234,88,12,.25)}
+.tag-green{background:rgba(5,150,105,.1);color:var(--green);border:1px solid rgba(5,150,105,.25)}
+.tag-blue{background:rgba(13,148,136,.1);color:var(--primary);border:1px solid rgba(13,148,136,.25)}
+.tag-purple{background:rgba(244,63,94,.1);color:var(--purple);border:1px solid rgba(244,63,94,.25)}
+/* Sliders */
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:#CBD5E1;outline:none;margin:8px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--primary);cursor:pointer;box-shadow:0 1px 4px rgba(13,148,136,.4)}
+input[type=text],input[type=number],select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:13px;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--primary)}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+/* Alert items */
+.alert-item{display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid}
+.alert-critical{background:rgba(220,38,38,.06);border-color:var(--red)}
+.alert-warning{background:rgba(234,88,12,.06);border-color:var(--yellow)}
+.alert-info{background:rgba(37,99,235,.06);border-color:var(--blue)}
+.alert-icon{font-size:20px;flex-shrink:0}
+.alert-body .a-title{font-size:13px;font-weight:600}
+.alert-body .a-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.alert-body .a-time{font-size:11px;color:var(--muted);margin-top:4px}
+/* ECG line animation */
+.ecg-container{position:relative;height:80px;overflow:hidden}
+canvas.ecg-canvas{width:100%;height:80px}
+/* Wearable vitals */
+.vital-ring{display:flex;flex-direction:column;align-items:center;gap:4px}
+.ring-wrap{position:relative;width:80px;height:80px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ring-num{font-size:16px;font-weight:700;line-height:1}
+.ring-unit{font-size:9px;color:var(--muted)}
+/* Progress bars */
+.prog-bar{height:6px;border-radius:3px;background:#E2E8F0;overflow:hidden;flex:1}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s ease}
+/* Badge */
+.badge{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;font-size:22px;margin:4px;border:2px solid}
+.badge-earned{border-color:var(--yellow);background:rgba(234,88,12,.08)}
+.badge-locked{border-color:var(--border);background:var(--bg);opacity:.4;filter:grayscale(1)}
+/* Blockchain */
+.block-chain{display:flex;align-items:center;gap:0;overflow-x:auto;padding:8px 0}
+.block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;min-width:160px;flex-shrink:0;font-size:12px}
+.block-hash{font-family:monospace;font-size:10px;color:var(--muted);word-break:break-all;margin-top:4px}
+.chain-link{color:var(--primary);font-size:20px;flex-shrink:0;padding:0 4px;opacity:.5}
+/* Voice assistant */
+.va-bubble{background:var(--gradient);border-radius:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;transition:transform .2s;border:3px solid var(--teal);margin:0 auto;box-shadow:0 4px 16px rgba(13,148,136,.3)}
+.va-bubble:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(13,148,136,.45)}
+.va-bubble.speaking{animation:varing 1s infinite}
+@keyframes varing{0%,100%{box-shadow:0 0 0 0 rgba(13,148,136,.5)}50%{box-shadow:0 0 0 16px rgba(13,148,136,0)}}
+.va-transcript{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;min-height:60px;margin-top:12px;color:var(--muted);font-style:italic}
+/* Population chart tooltips */
+.pop-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pop-row-label{font-size:12px;width:100px;color:var(--muted)}
+/* Scrollable */
+.scroll-y{overflow-y:auto;max-height:320px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#94A3B8;border-radius:2px}
+/* Responsive */
+@media(max-width:1200px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){#sidebar{width:56px}.logo-text,.logo-sub,.nav-label,.nav-item span:not(.icon){display:none}#main{margin-left:56px}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+/* Twin body diagram */
+.twin-body{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:22px}
+.twin-organ{padding:4px 12px;border-radius:6px;cursor:pointer;transition:all .2s;border:1px solid transparent;font-size:12px;display:flex;align-items:center;gap:6px}
+.twin-organ:hover{background:rgba(13,148,136,.08);border-color:var(--primary)}
+.twin-organ.risk-high{color:var(--red)}
+.twin-organ.risk-med{color:var(--yellow)}
+.twin-organ.risk-low{color:var(--green)}
+/* Scenario result */
+.scenario-diff{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 10px;border-radius:6px;margin-top:6px}
+.diff-good{background:rgba(5,150,105,.1);color:var(--green);border:1px solid rgba(5,150,105,.2)}
+.diff-bad{background:rgba(220,38,38,.1);color:var(--red);border:1px solid rgba(220,38,38,.2)}
+</style>
 </head>
 <body>
-    <h1>��� HealthSync Dashboard</h1>
-    
-    <div class="card">
-        <h3>API Status: <span id="status" class="loading">Checking...</span></h3>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="logo">
+    <div class="logo-icon">❤️</div>
+    <div>
+      <div class="logo-text">HealthSync</div>
+      <div class="logo-sub">Analytics v3.0</div>
     </div>
-    
-    <div class="card">
-        <h3>Analytics</h3>
-        <p>Patients: <span id="patients">0</span></p>
-        <p>Avg Risk: <span id="avgRisk">0.0</span></p>
-        <p>Alerts: <span id="alerts">0</span></p>
-        <button onclick="loadAnalytics()">Refresh</button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active" onclick="showSection('overview')"><span class="icon">🏠</span><span>Dashboard</span></div>
+    <div class="nav-item" onclick="showSection('alerts')"><span class="icon">🚨</span><span>Alerts</span><span class="alert-badge" id="alertBadge">9</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">AI Features</div>
+    <div class="nav-item" onclick="showSection('twin')"><span class="icon">🧬</span><span>Digital Twin</span></div>
+    <div class="nav-item" onclick="showSection('xai')"><span class="icon">🔍</span><span>XAI Insights</span></div>
+    <div class="nav-item" onclick="showSection('recommendations')"><span class="icon">💡</span><span>Recommendations</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Monitoring</div>
+    <div class="nav-item" onclick="showSection('wearables')"><span class="icon">⌚</span><span>Wearables & IoT</span></div>
+    <div class="nav-item" onclick="showSection('population')"><span class="icon">📊</span><span>Population Health</span></div>
+    <div class="nav-item" onclick="showSection('resources')"><span class="icon">🏥</span><span>Resource Planning</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Engagement</div>
+    <div class="nav-item" onclick="showSection('gamified')"><span class="icon">🎮</span><span>Patient Engagement</span></div>
+    <div class="nav-item" onclick="showSection('voice')"><span class="icon">🎙️</span><span>Voice Assistant</span></div>
+    <div class="nav-item" onclick="showSection('blockchain')"><span class="icon">🔐</span><span>Data & Blockchain</span></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="topbar-title" id="sectionTitle">Dashboard Overview</div>
+    <select class="patient-select" id="patientSelect" onchange="switchPatient()">
+      <option value="0">James Okoye, 67 · High Risk</option>
+      <option value="1">Amara Dlamini, 54 · Medium Risk</option>
+      <option value="2">Sipho Nkosi, 42 · Low Risk</option>
+      <option value="3">Fatima Hassan, 61 · High Risk</option>
+    </select>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)">
+      <div class="status-dot"></div> Live
     </div>
-    
-    <div class="card">
-        <h3>Make Prediction</h3>
-        Age: <input type="number" id="age" value="65" min="1" max="120">
-        BP: <input type="number" id="bp" value="120" min="50" max="250">
-        <button onclick="makePrediction()">Predict</button>
-        <div id="result"></div>
+    <button class="btn btn-ghost" onclick="showSection('voice')">🎙️ Ask AI</button>
+    <button class="btn btn-red" onclick="triggerEmergency()" style="font-size:12px">🆘 Emergency</button>
+  </div>
+
+  <div id="content">
+
+    <!-- ===== OVERVIEW ===== -->
+    <div class="section active" id="sec-overview">
+      <div class="section-title">📊 Dashboard Overview</div>
+      <div class="grid-4">
+        <div class="metric-card">
+          <div class="metric-label">Total Patients</div>
+          <div class="metric-value" style="color:var(--primary)" id="m-patients">243</div>
+          <div class="metric-sub">↑ 12 this week</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg Risk Score</div>
+          <div class="metric-value" style="color:var(--yellow)" id="m-risk">68.7</div>
+          <div class="metric-sub">↓ 2.1 from last week</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Active Alerts</div>
+          <div class="metric-value" style="color:var(--red)" id="m-alerts">9</div>
+          <div class="metric-sub">3 critical, 6 warnings</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ICU Availability</div>
+          <div class="metric-value" style="color:var(--green)">73%</div>
+          <div class="metric-sub">11/15 beds available</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Risk Distribution (7 days)</div>
+          <canvas id="overviewChart" height="160"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">Recent Predictions</div>
+          <div id="recentPredictions" class="scroll-y"></div>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card-sm">
+          <div class="card-title">Current Patient</div>
+          <div id="patientCard" style="font-size:13px;line-height:1.8;color:var(--muted)"></div>
+        </div>
+        <div class="card-sm">
+          <div class="card-title">Heart Rate (Live)</div>
+          <canvas id="liveHRChart" height="120"></canvas>
+        </div>
+        <div class="card-sm">
+          <div class="card-title">Quick Risk Assessment</div>
+          <div style="margin-bottom:8px">
+            <label>Age</label>
+            <input type="number" id="q-age" value="65" min="1" max="120">
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Systolic BP (mmHg)</label>
+            <input type="number" id="q-bp" value="140" min="50" max="250">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="quickPredict()">Predict Risk</button>
+          <div id="q-result" style="margin-top:10px;font-size:13px"></div>
+        </div>
+      </div>
     </div>
-    
-    <script>
-        const API_URL = 'http://localhost:8001';
-        
-        // Check API status on load
-        checkAPI();
-        
-        async function checkAPI() {
-            try {
-                const response = await fetch(API_URL + '/health');
-                if (response.ok) {
-                    document.getElementById('status').className = 'success';
-                    document.getElementById('status').textContent = '✅ Online';
-                    loadAnalytics();
-                } else {
-                    throw new Error('API not responding');
-                }
-            } catch (error) {
-                document.getElementById('status').className = 'error';
-                document.getElementById('status').textContent = '❌ Offline: ' + error.message;
-            }
-        }
-        
-        async function loadAnalytics() {
-            try {
-                const response = await fetch(API_URL + '/analytics');
-                const data = await response.json();
-                
-                document.getElementById('patients').textContent = data.total_patients;
-                document.getElementById('avgRisk').textContent = data.avg_risk_score;
-                document.getElementById('alerts').textContent = data.active_alerts;
-                
-            } catch (error) {
-                console.error('Analytics error:', error);
-            }
-        }
-        
-        async function makePrediction() {
-            const age = document.getElementById('age').value;
-            const bp = document.getElementById('bp').value;
-            
-            if (!age || !bp) {
-                alert('Please enter both values');
-                return;
-            }
-            
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p class="loading">Predicting...</p>';
-            
-            try {
-                const response = await fetch(API_URL + '/predict', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        age: parseInt(age),
-                        systolic_bp: parseInt(bp)
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    resultDiv.innerHTML = `
-                        <p class="success"><strong>✅ Prediction Complete</strong></p>
-                        <p>Risk Score: ${data.risk_score}</p>
-                        <p>Risk Level: ${data.risk_level}</p>
-                        <p>Age: ${data.age}, BP: ${data.bp}</p>
-                    `;
-                } else {
-                    resultDiv.innerHTML = `<p class="error">Prediction failed</p>`;
-                }
-                
-            } catch (error) {
-                resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
-                console.error('Prediction error:', error);
-            }
-        }
-    </script>
+
+    <!-- ===== ALERTS ===== -->
+    <div class="section" id="sec-alerts">
+      <div class="section-title">🚨 Emergency Alert System</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Active Alerts</div>
+          <div id="alertsList"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Alert Configuration</div>
+          <div style="margin-bottom:12px">
+            <label>Heart Rate Critical Threshold (bpm)</label>
+            <input type="range" id="hrThresh" min="50" max="200" value="120" oninput="updateThreshLabel('hrThresh','hrThreshVal')">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>50</span><span id="hrThreshVal" style="color:var(--primary);font-weight:600">120 bpm</span><span>200</span></div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Blood Pressure Alert (mmHg)</label>
+            <input type="range" id="bpThresh" min="100" max="200" value="160" oninput="updateThreshLabel('bpThresh','bpThreshVal')">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>100</span><span id="bpThreshVal" style="color:var(--primary);font-weight:600">160 mmHg</span><span>200</span></div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label>SpO₂ Low Threshold (%)</label>
+            <input type="range" id="spo2Thresh" min="80" max="99" value="90" oninput="updateThreshLabel('spo2Thresh','spo2ThreshVal')">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>80</span><span id="spo2ThreshVal" style="color:var(--primary);font-weight:600">90%</span><span>99</span></div>
+          </div>
+          <div style="margin-bottom:16px">
+            <label>Notify</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+              <label style="color:var(--text);display:flex;align-items:center;gap:4px"><input type="checkbox" checked> Cardiologist</label>
+              <label style="color:var(--text);display:flex;align-items:center;gap:4px"><input type="checkbox" checked> On-call Nurse</label>
+              <label style="color:var(--text);display:flex;align-items:center;gap:4px"><input type="checkbox"> Emergency Services</label>
+              <label style="color:var(--text);display:flex;align-items:center;gap:4px"><input type="checkbox" checked> Patient Family</label>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="saveAlertConfig()">Save Configuration</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Alert History (24h)</div>
+        <canvas id="alertHistChart" height="100"></canvas>
+      </div>
+    </div>
+
+    <!-- ===== DIGITAL TWIN ===== -->
+    <div class="section" id="sec-twin">
+      <div class="section-title">🧬 Digital Twin — Patient Cardiovascular Model</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Run "What-If" Scenarios</div>
+          <div style="margin-bottom:12px">
+            <label>Daily Exercise (minutes/day) <span id="ex-val" style="color:var(--primary)">20</span></label>
+            <input type="range" id="twin-exercise" min="0" max="120" value="20" oninput="updateTwin()">
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Diet Quality (1=Poor · 10=Excellent) <span id="diet-val" style="color:var(--primary)">4</span></label>
+            <input type="range" id="twin-diet" min="1" max="10" value="4" oninput="updateTwin()">
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Stress Level (1=Low · 10=High) <span id="stress-val" style="color:var(--primary)">7</span></label>
+            <input type="range" id="twin-stress" min="1" max="10" value="7" oninput="updateTwin()">
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Medication Adherence (%) <span id="med-val" style="color:var(--primary)">60</span></label>
+            <input type="range" id="twin-med" min="0" max="100" value="60" oninput="updateTwin()">
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Sleep Duration (hrs/night) <span id="sleep-val" style="color:var(--primary)">6</span></label>
+            <input type="range" id="twin-sleep" min="3" max="10" value="6" oninput="updateTwin()">
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Smoking Status</label>
+            <select id="twin-smoke" onchange="updateTwin()">
+              <option value="2">Current Smoker</option>
+              <option value="1">Former Smoker</option>
+              <option value="0">Non-Smoker</option>
+            </select>
+          </div>
+          <button class="btn btn-green" style="width:100%;margin-top:8px" onclick="applyScenario()">Apply Optimal Scenario</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Predicted Outcomes</div>
+          <canvas id="twinChart" height="200"></canvas>
+          <div id="twin-outcomes" style="margin-top:12px"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0">
+        <div class="card-title">Organ-Level Risk Map</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+          <div id="twinBody" style="min-width:160px"></div>
+          <div id="twinOrgDetail" style="flex:1;font-size:13px;color:var(--muted);line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== XAI ===== -->
+    <div class="section" id="sec-xai">
+      <div class="section-title">🔍 Explainable AI Risk Insights</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Risk Factor Breakdown</div>
+          <canvas id="xaiChart" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">Why This Patient Is at Risk</div>
+          <div id="xaiExplanation" style="font-size:13px;line-height:1.8"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Feature Contribution (SHAP-style)</div>
+        <canvas id="shapChart" height="120"></canvas>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">Positive values increase risk · Negative values decrease risk</div>
+      </div>
+    </div>
+
+    <!-- ===== RECOMMENDATIONS ===== -->
+    <div class="section" id="sec-recommendations">
+      <div class="section-title">💡 Personalized Preventive Recommendations</div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">🥗 Diet & Nutrition</div>
+          <div id="rec-diet" style="font-size:13px;line-height:1.9;color:var(--muted)"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🏃 Physical Activity</div>
+          <div id="rec-exercise" style="font-size:13px;line-height:1.9;color:var(--muted)"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">💊 Medication & Monitoring</div>
+          <div id="rec-meds" style="font-size:13px;line-height:1.9;color:var(--muted)"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🧘 Lifestyle Adjustments</div>
+          <div id="rec-lifestyle" style="font-size:13px;line-height:1.9;color:var(--muted)"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📅 30-Day Action Plan</div>
+          <div id="rec-plan" style="font-size:13px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WEARABLES ===== -->
+    <div class="section" id="sec-wearables">
+      <div class="section-title">⌚ Wearable & IoT Integration</div>
+      <div class="grid-4">
+        <div class="metric-card" style="text-align:center">
+          <div class="metric-label">Heart Rate</div>
+          <div class="metric-value" id="w-hr" style="color:var(--red)">72</div>
+          <div class="metric-sub">bpm · Normal</div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" id="w-hr-bar" style="width:50%;background:var(--red)"></div></div>
+        </div>
+        <div class="metric-card" style="text-align:center">
+          <div class="metric-label">SpO₂</div>
+          <div class="metric-value" id="w-spo2" style="color:var(--primary)">97</div>
+          <div class="metric-sub">% · Normal</div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" id="w-spo2-bar" style="width:97%;background:var(--primary)"></div></div>
+        </div>
+        <div class="metric-card" style="text-align:center">
+          <div class="metric-label">Blood Pressure</div>
+          <div class="metric-value" id="w-bp" style="color:var(--yellow);font-size:22px">142/88</div>
+          <div class="metric-sub">mmHg · Elevated</div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" id="w-bp-bar" style="width:68%;background:var(--yellow)"></div></div>
+        </div>
+        <div class="metric-card" style="text-align:center">
+          <div class="metric-label">Body Temp</div>
+          <div class="metric-value" id="w-temp" style="color:var(--green)">36.8</div>
+          <div class="metric-sub">°C · Normal</div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" id="w-temp-bar" style="width:60%;background:var(--green)"></div></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Live ECG — 10 sec Strip</div>
+          <canvas id="ecgCanvas" height="100"></canvas>
+          <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--muted)">
+            <span>Rhythm: <span style="color:var(--green)">Normal Sinus</span></span>
+            <span>QRS: <span style="color:var(--text)">84ms</span></span>
+            <span>QT: <span style="color:var(--text)">420ms</span></span>
+            <span>PR: <span style="color:var(--text)">160ms</span></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Heart Rate Variability (HRV)</div>
+          <canvas id="hrvChart" height="140"></canvas>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card-sm">
+          <div class="card-title">Connected Devices</div>
+          <div id="devicesList" style="font-size:13px"></div>
+        </div>
+        <div class="card-sm">
+          <div class="card-title">Steps Today</div>
+          <div style="text-align:center;padding:12px 0">
+            <div style="font-size:40px;font-weight:700;color:var(--teal)" id="w-steps">6,840</div>
+            <div style="color:var(--muted);font-size:12px">Goal: 10,000 steps</div>
+            <div class="risk-bar" style="margin-top:12px"><div class="risk-fill" style="width:68%;background:var(--teal)"></div></div>
+          </div>
+        </div>
+        <div class="card-sm">
+          <div class="card-title">Caloric Burn</div>
+          <div style="text-align:center;padding:12px 0">
+            <div style="font-size:40px;font-weight:700;color:var(--purple)">1,240</div>
+            <div style="color:var(--muted);font-size:12px">kcal burned · Goal: 2,000</div>
+            <div class="risk-bar" style="margin-top:12px"><div class="risk-fill" style="width:62%;background:var(--purple)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== POPULATION ===== -->
+    <div class="section" id="sec-population">
+      <div class="section-title">📊 Population Health Analytics</div>
+      <div class="grid-4">
+        <div class="metric-card"><div class="metric-label">Patients Monitored</div><div class="metric-value" style="color:var(--primary)">2,847</div><div class="metric-sub">Across 3 facilities</div></div>
+        <div class="metric-card"><div class="metric-label">High-Risk Population</div><div class="metric-value" style="color:var(--red)">18.4%</div><div class="metric-sub">↑ 1.2% this month</div></div>
+        <div class="metric-card"><div class="metric-label">Intervention Success</div><div class="metric-value" style="color:var(--green)">76%</div><div class="metric-sub">Patients improved</div></div>
+        <div class="metric-card"><div class="metric-label">Predicted Admissions</div><div class="metric-value" style="color:var(--yellow)">34</div><div class="metric-sub">Next 7 days</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Risk by Age Group</div>
+          <canvas id="popAgeChart" height="180"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">Disease Prevalence Trends</div>
+          <canvas id="popTrendChart" height="180"></canvas>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Geographic Risk Heatmap</div>
+          <div id="geoHeatmap" style="height:180px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:4px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Risk Factors (Population)</div>
+          <div id="popRiskFactors" style="font-size:13px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RESOURCES ===== -->
+    <div class="section" id="sec-resources">
+      <div class="section-title">🏥 Predictive Hospital Resource Planning</div>
+      <div class="grid-4">
+        <div class="metric-card">
+          <div class="metric-label">ICU Beds Available</div>
+          <div class="metric-value" style="color:var(--green)">11 <span style="font-size:14px;color:var(--muted)">/ 15</span></div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" style="width:73%;background:var(--green)"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Cardiology Staff</div>
+          <div class="metric-value" style="color:var(--yellow)">8 <span style="font-size:14px;color:var(--muted)">/ 12</span></div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" style="width:66%;background:var(--yellow)"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Cath Lab Availability</div>
+          <div class="metric-value" style="color:var(--primary)">3 <span style="font-size:14px;color:var(--muted)">/ 4</span></div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" style="width:75%;background:var(--primary)"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Defib Units Ready</div>
+          <div class="metric-value" style="color:var(--green)">18 <span style="font-size:14px;color:var(--muted)">/ 20</span></div>
+          <div class="risk-bar" style="margin-top:8px"><div class="risk-fill" style="width:90%;background:var(--green)"></div></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Predicted Admissions — Next 30 Days (ML Forecast)</div>
+          <canvas id="admissionsChart" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">Resource Utilization Forecast</div>
+          <canvas id="resourceChart" height="200"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Staffing Recommendations</div>
+        <div id="staffingRecs" style="font-size:13px;display:flex;flex-wrap:wrap;gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- ===== GAMIFIED ===== -->
+    <div class="section" id="sec-gamified">
+      <div class="section-title">🎮 Gamified Patient Engagement</div>
+      <div class="grid-2">
+        <div class="card">
+          <div style="text-align:center;padding:16px 0">
+            <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Health Score</div>
+            <div style="position:relative;display:inline-block">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="58" fill="none" stroke="#30363d" stroke-width="12"/>
+                <circle cx="70" cy="70" r="58" fill="none" stroke="url(#scoreGrad)" stroke-width="12"
+                  stroke-dasharray="364" stroke-dashoffset="127" stroke-linecap="round" transform="rotate(-90 70 70)"/>
+                <defs>
+                  <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#0D9488"/>
+                    <stop offset="100%" style="stop-color:#059669"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+                <div style="font-size:32px;font-weight:800;color:var(--navy)" id="healthScore">65</div>
+                <div style="font-size:11px;color:var(--muted)">/ 100</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;font-size:13px;color:var(--yellow)">⭐ Silver Tier — 35 pts to Gold</div>
+          </div>
+          <div style="margin-top:4px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+              <span style="color:var(--muted);width:100px">Medication</span>
+              <div class="prog-bar"><div class="prog-fill" style="width:60%;background:var(--yellow)"></div></div>
+              <span style="color:var(--muted)">60%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+              <span style="color:var(--muted);width:100px">Exercise</span>
+              <div class="prog-bar"><div class="prog-fill" style="width:40%;background:var(--red)"></div></div>
+              <span style="color:var(--muted)">40%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+              <span style="color:var(--muted);width:100px">Diet</span>
+              <div class="prog-bar"><div class="prog-fill" style="width:70%;background:var(--green)"></div></div>
+              <span style="color:var(--muted)">70%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="color:var(--muted);width:100px">Sleep</span>
+              <div class="prog-bar"><div class="prog-fill" style="width:55%;background:var(--purple)"></div></div>
+              <span style="color:var(--muted)">55%</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Achievements & Badges</div>
+          <div id="badgesContainer" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px"></div>
+          <div class="card-title" style="margin-top:16px">Active Challenges</div>
+          <div id="challengesList" style="font-size:13px"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Weekly Progress</div>
+          <canvas id="progressChart" height="160"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">Leaderboard (Anonymized)</div>
+          <div id="leaderboard" style="font-size:13px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VOICE ===== -->
+    <div class="section" id="sec-voice">
+      <div class="section-title">🎙️ Multilingual Voice Assistant</div>
+      <div class="grid-2">
+        <div class="card" style="text-align:center">
+          <div class="card-title">AI Health Assistant</div>
+          <div class="va-bubble" id="vaBubble" onclick="toggleVoice()">🎙️</div>
+          <div style="margin-top:16px;font-size:13px;color:var(--muted)" id="vaStatus">Click microphone to speak</div>
+          <div class="va-transcript" id="vaTranscript">Your health summary will appear here…</div>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap" id="quickPhrases"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Language & Settings</div>
+          <div style="margin-bottom:12px">
+            <label>Language</label>
+            <select id="vaLang" onchange="setVoiceLang()">
+              <option value="en-US">English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="fr-FR">Français</option>
+              <option value="es-ES">Español</option>
+              <option value="zu-ZA">isiZulu</option>
+              <option value="xh-ZA">isiXhosa</option>
+              <option value="ar-SA">العربية</option>
+              <option value="pt-BR">Português (BR)</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Speech Rate</label>
+            <input type="range" id="speechRate" min="0.5" max="2" step="0.1" value="1" oninput="document.getElementById('rateVal').textContent=this.value+'x'">
+            <div style="font-size:11px;color:var(--primary)" id="rateVal">1x</div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Voice Pitch</label>
+            <input type="range" id="speechPitch" min="0" max="2" step="0.1" value="1" oninput="document.getElementById('pitchVal').textContent=this.value">
+            <div style="font-size:11px;color:var(--primary)" id="pitchVal">1</div>
+          </div>
+          <div class="card-title" style="margin-top:16px">Sample Questions</div>
+          <div style="font-size:13px;color:var(--muted);line-height:2" id="sampleQs"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Conversation History</div>
+        <div id="vaHistory" style="font-size:13px;max-height:200px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- ===== BLOCKCHAIN ===== -->
+    <div class="section" id="sec-blockchain">
+      <div class="section-title">🔐 Secure Data Sharing & Blockchain Audit</div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">Data Access Control</div>
+          <div id="accessControls" style="font-size:13px"></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="updateConsent()">Update Consent Settings</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Compliance Status</div>
+          <div id="complianceStatus" style="font-size:13px;line-height:2"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Data Sharing Summary</div>
+          <canvas id="sharingChart" height="160"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Blockchain Audit Trail</div>
+        <div class="block-chain" id="blockChain"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Recent Access Log</div>
+        <div id="accessLog" style="font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto;line-height:2;color:var(--muted)"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ============================================================
+// CONFIG & STATE
+// ============================================================
+const API_URL = 'http://localhost:8001';
+let patientsData = [];
+let currentPt    = 0;
+let charts       = {};
+let vaHistory    = [];
+let isSpeaking   = false;
+let recognition  = null;
+let vitalsTimer  = null;
+let twinDebounce = null;
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const SECTION_TITLES = {
+  overview:"Dashboard Overview", alerts:"Emergency Alert System",
+  twin:"Digital Twin — Cardiovascular Model", xai:"Explainable AI Risk Insights",
+  recommendations:"Personalized Recommendations", wearables:"Wearable & IoT Integration",
+  population:"Population Health Analytics", resources:"Predictive Hospital Resource Planning",
+  gamified:"Patient Engagement", voice:"Multilingual Voice Assistant",
+  blockchain:"Secure Data & Blockchain Audit"
+};
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  const navEl = document.querySelector(`.nav-item[onclick="showSection('${id}')"]`);
+  if(navEl) navEl.classList.add('active');
+  document.getElementById('sectionTitle').textContent = SECTION_TITLES[id]||id;
+  if(id==='overview')         initOverviewCharts();
+  if(id==='twin')             loadTwinSection();
+  if(id==='xai')              loadXAISection();
+  if(id==='population')       loadPopSection();
+  if(id==='resources')        loadResourceSection();
+  if(id==='gamified')         initGamified();
+  if(id==='blockchain')       loadBlockchainSection();
+  if(id==='alerts')           loadAlertsSection();
+  if(id==='recommendations')  loadRecsSection();
+}
+
+async function switchPatient(){
+  currentPt = parseInt(document.getElementById('patientSelect').value);
+  await refreshPatientViews();
+}
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+async function init(){
+  try {
+    const health = await apiFetch('/health');
+    setStatus(health ? 'online' : 'offline');
+    patientsData = await apiFetch('/patients') || [];
+    populatePatientSelect();
+    await Promise.all([loadAnalytics(), renderPatientCard()]);
+    initOverviewCharts();
+    renderRecentPredictions();
+    const alertData = await apiFetch('/alerts');
+    if(alertData) updateAlertBadge(alertData.total);
+    startLiveECG();
+    startVitalsPoll();
+    initWearableCharts();
+    renderWearables();
+    renderVoiceAssistant();
+  } catch(e) {
+    console.error('Init error:', e);
+    setStatus('offline');
+  }
+}
+
+function setStatus(state){
+  const dot = document.querySelector('.status-dot');
+  if(dot){
+    dot.style.background = state==='online' ? 'var(--green)' : 'var(--red)';
+    dot.style.boxShadow  = state==='online' ? '0 0 6px var(--green)' : '0 0 6px var(--red)';
+    const txt = dot.nextSibling;
+    if(txt) txt.textContent = state==='online' ? ' Live' : ' Offline';
+  }
+}
+
+function populatePatientSelect(){
+  document.getElementById('patientSelect').innerHTML = patientsData.map((p,i)=>
+    `<option value="${i}">${p.name}, ${p.age} \u00b7 ${p.risk_level} Risk</option>`
+  ).join('');
+}
+
+function updateAlertBadge(n){
+  const el = document.getElementById('alertBadge');
+  if(el) el.textContent = n;
+}
+
+async function refreshPatientViews(){
+  await renderPatientCard();
+  renderWearables();
+  startVitalsPoll();
+  const active = document.querySelector('.section.active');
+  if(!active) return;
+  const id = active.id.replace('sec-','');
+  if(id==='xai')             loadXAISection();
+  if(id==='twin')            loadTwinSection();
+  if(id==='recommendations') loadRecsSection();
+  if(id==='gamified')        initGamified();
+  if(id==='overview'){ renderPatientCard(); renderRecentPredictions(); }
+}
+
+// ============================================================
+// API HELPER
+// ============================================================
+async function apiFetch(path, opts){
+  try {
+    const r = await fetch(API_URL + path, opts);
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e) {
+    console.warn('API:', path, e.message);
+    return null;
+  }
+}
+
+// ============================================================
+// ANALYTICS — /analytics
+// ============================================================
+async function loadAnalytics(){
+  const d = await apiFetch('/analytics');
+  if(!d) return;
+  setText('m-patients', d.total_patients);
+  setText('m-risk',     d.avg_risk_score);
+  setText('m-alerts',   d.active_alerts);
+  updateAlertBadge(d.active_alerts);
+}
+
+// ============================================================
+// PATIENT CARD
+// ============================================================
+async function renderPatientCard(){
+  const p = patientsData[currentPt];
+  if(!p) return;
+  const col = p.risk>=75?'var(--red)':p.risk>=45?'var(--yellow)':'var(--green)';
+  document.getElementById('patientCard').innerHTML = `
+    <strong style="color:var(--navy);font-size:15px">${p.name}</strong><br>
+    Age: ${p.age} &nbsp;&middot;&nbsp; ${p.gender}<br>
+    Risk Score: <strong style="color:${col}">${p.risk} &mdash; ${p.risk_level}</strong><br>
+    BP: ${p.systolic_bp}/${p.diastolic_bp} mmHg &nbsp;&middot;&nbsp; HR: ${p.heart_rate} bpm<br>
+    SpO&#8322;: ${p.spo2}% &nbsp;&middot;&nbsp; Temp: ${p.temperature}&deg;C<br>
+    Cholesterol: ${p.cholesterol_total} mmol/L (LDL: ${p.cholesterol_ldl})<br>
+    BMI: ${p.bmi} &nbsp;&middot;&nbsp; Smoking: ${p.smoking}<br>
+    Ward: ${p.ward} &nbsp;&middot;&nbsp; Bed: ${p.bed}<br>
+    Physician: ${p.attending_physician}<br>
+    Conditions: ${p.conditions.join(', ')}<br>
+    <div style="margin-top:8px">${p.medications.map(m=>`<span class="tag tag-blue">${m}</span>`).join('')}</div>
+  `;
+}
+
+// ============================================================
+// OVERVIEW CHARTS
+// ============================================================
+function initOverviewCharts(){
+  destroyChart('overviewChart');
+  destroyChart('liveHRChart');
+  const labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  charts.overview = new Chart(document.getElementById('overviewChart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'High Risk',  data:[18,21,19,24,22,20,23],borderColor:'#DC2626',backgroundColor:'rgba(220,38,38,.08)',fill:true,tension:.4,borderWidth:2},
+      {label:'Medium Risk',data:[45,48,44,50,47,46,49],borderColor:'#EA580C',backgroundColor:'rgba(234,88,12,.08)', fill:true,tension:.4,borderWidth:2},
+      {label:'Low Risk',   data:[180,174,180,169,174,177,171],borderColor:'#059669',backgroundColor:'rgba(5,150,105,.06)',fill:true,tension:.4,borderWidth:2}
+    ]},
+    options:{...chartDefaults(),plugins:{legend:{display:true,labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+  const hrData = Array.from({length:20},(_,i)=>70+Math.round(Math.sin(i/2)*8+Math.random()*4));
+  charts.liveHR = new Chart(document.getElementById('liveHRChart'),{
+    type:'line',
+    data:{labels:hrData.map((_,i)=>i),datasets:[{data:hrData,borderColor:'#DC2626',borderWidth:2,pointRadius:0,tension:.4,fill:true,backgroundColor:'rgba(220,38,38,.06)'}]},
+    options:{...chartDefaults(),scales:{x:{display:false},y:{display:false}},animation:false}
+  });
+  renderRecentPredictions();
+}
+
+async function renderRecentPredictions(){
+  const d = await apiFetch('/analytics');
+  const preds = d?.recent_predictions || [];
+  document.getElementById('recentPredictions').innerHTML = preds.map(p=>{
+    const c = p.risk>=75?'var(--red)':p.risk>=45?'var(--yellow)':'var(--green)';
+    const t = p.timestamp ? new Date(p.timestamp).toLocaleTimeString() : '';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="color:var(--text)">${p.name}</span>
+      <span style="color:${c};font-weight:600">${p.risk} &middot; ${p.risk_level}</span>
+      <span style="color:var(--muted)">${t}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// QUICK PREDICT — POST /predict
+// ============================================================
+async function quickPredict(){
+  const age = parseInt(document.getElementById('q-age').value)||65;
+  const bp  = parseInt(document.getElementById('q-bp').value)||140;
+  const div = document.getElementById('q-result');
+  div.innerHTML = '<span style="color:var(--muted)">Calculating&#8230;</span>';
+  const d = await apiFetch('/predict',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({age,systolic_bp:bp})
+  });
+  if(!d){ div.innerHTML='<span style="color:var(--red)">API unavailable</span>'; return; }
+  const col = d.risk_score>=75?'var(--red)':d.risk_score>=45?'var(--yellow)':'var(--green)';
+  div.innerHTML=`<div style="padding:10px;background:rgba(13,148,136,.06);border-radius:6px;border:1px solid var(--border)">
+    <div style="font-size:22px;font-weight:700;color:${col}">${d.risk_score} &mdash; ${d.risk_level}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">Age ${age} &middot; BP ${bp} mmHg</div>
+    <div style="font-size:11px;color:var(--primary);margin-top:4px">${d.recommendation}</div>
+  </div>`;
+}
+
+// ============================================================
+// ALERTS — GET /alerts
+// ============================================================
+async function loadAlertsSection(){
+  const d = await apiFetch('/alerts');
+  const list = document.getElementById('alertsList');
+  if(!list) return;
+  const alerts = d?.alerts || [];
+  list.innerHTML = alerts.map(a=>`
+    <div class="alert-item alert-${a.type==='critical'?'critical':a.type==='warning'?'warning':'info'}">
+      <div class="alert-icon">${a.icon}</div>
+      <div class="alert-body">
+        <div class="a-title">${a.title}</div>
+        <div class="a-desc">${a.desc}</div>
+        <div class="a-time">${a.time}</div>
+      </div>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;flex-shrink:0" onclick="dismissAlert(this)">Dismiss</button>
+    </div>`).join('');
+  initAlertChart();
+}
+
+function renderAlerts(){ loadAlertsSection(); }
+
+function dismissAlert(btn){
+  btn.closest('.alert-item').style.opacity='0';
+  setTimeout(()=>{
+    btn.closest('.alert-item').remove();
+    const b = document.getElementById('alertBadge');
+    b.textContent = Math.max(0,parseInt(b.textContent)-1);
+  },300);
+}
+
+function initAlertChart(){
+  destroyChart('alertHistChart');
+  const hrs = Array.from({length:24},(_,i)=>`${i}:00`);
+  charts.alertHist = new Chart(document.getElementById('alertHistChart'),{
+    type:'bar',
+    data:{labels:hrs,datasets:[
+      {label:'Critical',data:hrs.map(()=>Math.random()<.15?Math.round(Math.random()*3):0),backgroundColor:'rgba(220,38,38,.75)',borderRadius:3},
+      {label:'Warning', data:hrs.map(()=>Math.round(Math.random()*2)),backgroundColor:'rgba(234,88,12,.65)',borderRadius:3},
+      {label:'Info',    data:hrs.map(()=>Math.round(Math.random()*3)),backgroundColor:'rgba(37,99,235,.5)', borderRadius:3}
+    ]},
+    options:{...chartDefaults(),scales:{x:{stacked:true,...axisDef()},y:{stacked:true,...axisDef()}},
+      plugins:{legend:{display:true,labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+}
+
+function triggerEmergency(){
+  const p = patientsData[currentPt];
+  if(!p) return;
+  alert(`EMERGENCY ALERT TRIGGERED\n\nPatient: ${p.name}\nAge: ${p.age}\nRisk: ${p.risk} (${p.risk_level})\nWard: ${p.ward} - Bed: ${p.bed}\n\nNotifying:\n+ Cardiologist on-call\n+ Emergency Team\n+ Ambulance dispatch`);
+}
+
+function saveAlertConfig(){ showToast('&#10003; Alert configuration saved'); }
+
+function updateThreshLabel(rangeId,labelId){
+  const v = document.getElementById(rangeId).value;
+  const u = {hrThresh:' bpm',bpThresh:' mmHg',spo2Thresh:'%'};
+  document.getElementById(labelId).textContent = v+(u[rangeId]||'');
+}
+
+// ============================================================
+// DIGITAL TWIN — GET /patients/{id}/twin  POST /twin/simulate
+// ============================================================
+async function loadTwinSection(){
+  const p = patientsData[currentPt];
+  if(!p) return;
+  const d = await apiFetch(`/patients/${p.id}/twin`);
+  if(!d) return;
+  buildTwinChart(d);
+  renderTwinBody(d.organs);
+  renderTwinOutcomes({current_risk:d.risk,simulated_risk:d.risk,risk_delta:0,insights:[]});
+}
+
+function initTwinChart(){ loadTwinSection(); }
+
+function buildTwinChart(d){
+  destroyChart('twinChart');
+  charts.twin = new Chart(document.getElementById('twinChart'),{
+    type:'radar',
+    data:{labels:d.labels,datasets:[
+      {label:'Current',  data:d.current,        borderColor:'#DC2626',backgroundColor:'rgba(220,38,38,.1)', pointBackgroundColor:'#DC2626',borderWidth:2},
+      {label:'Simulated',data:[...d.current],   borderColor:'#059669',backgroundColor:'rgba(5,150,105,.1)',pointBackgroundColor:'#059669',borderWidth:2}
+    ]},
+    options:{responsive:true,
+      scales:{r:{backgroundColor:'rgba(0,0,0,0)',grid:{color:'rgba(15,23,42,.08)'},
+        pointLabels:{color:'#334155',font:{size:11}},
+        ticks:{color:'#64748B',backdropColor:'transparent',stepSize:20},min:0,max:100}},
+      plugins:{legend:{display:true,labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+}
+
+async function updateTwin(){
+  ['exercise','diet','stress','med','sleep'].forEach(k=>{
+    const el=document.getElementById('twin-'+k);
+    if(el) document.getElementById(k+'-val').textContent=el.value;
+  });
+  clearTimeout(twinDebounce);
+  twinDebounce = setTimeout(runTwinSimulate, 450);
+}
+
+async function runTwinSimulate(){
+  const p = patientsData[currentPt];
+  if(!p) return;
+  const body = {
+    patient_id:           p.id,
+    exercise:             parseInt(document.getElementById('twin-exercise')?.value||20),
+    diet:                 parseInt(document.getElementById('twin-diet')?.value||4),
+    stress:               parseInt(document.getElementById('twin-stress')?.value||7),
+    medication_adherence: parseInt(document.getElementById('twin-med')?.value||60),
+    sleep:                parseFloat(document.getElementById('twin-sleep')?.value||6),
+    smoking_status:       parseInt(document.getElementById('twin-smoke')?.value||1),
+  };
+  const r = await apiFetch('/twin/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r) return;
+  if(charts.twin){ charts.twin.data.datasets[1].data=r.simulated; charts.twin.update('none'); }
+  renderTwinOutcomes(r);
+}
+
+function renderTwinOutcomes(r){
+  const el = document.getElementById('twin-outcomes');
+  if(!el) return;
+  const delta = r.risk_delta||0;
+  el.innerHTML=`
+    <div class="scenario-diff ${delta<=0?'diff-good':'diff-bad'}">
+      Risk Score: ${r.current_risk} &rarr; <strong>${r.simulated_risk}</strong>
+      (${delta<=0?'&darr; '+Math.abs(delta):'&uarr; '+delta} pts ${delta<=0?'improvement':'increase'})
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:2">
+      ${(r.insights||[]).join('<br>')}
+    </div>`;
+}
+
+function renderTwinBody(organs){
+  if(!organs) return;
+  document.getElementById('twinBody').innerHTML = organs.map(o=>`
+    <div class="twin-organ risk-${o.risk}" onclick="showOrgDetail(this)">
+      ${o.icon} ${o.name}
+      <span class="tag tag-${o.risk==='high'?'red':o.risk==='med'?'yellow':'green'}" style="font-size:9px">${o.risk.toUpperCase()}</span>
+    </div>`).join('');
+  // store detail in dataset
+  organs.forEach((o,i)=>{
+    const el = document.getElementById('twinBody').children[i];
+    if(el) el.dataset.detail = o.detail;
+  });
+}
+
+function showOrgDetail(el){
+  document.getElementById('twinOrgDetail').innerHTML =
+    `<strong style="color:var(--navy)">${el.textContent.trim().split('\n')[0].trim()}</strong><br><br>${el.dataset.detail||''}<br><br>
+    <span style="color:var(--muted);font-size:11px">Click an organ to see details</span>`;
+}
+
+function applyScenario(){
+  const vals={exercise:60,diet:8,stress:3,med:95,sleep:8,smoke:0};
+  Object.entries(vals).forEach(([k,v])=>{
+    const id = k==='smoke'?'twin-smoke':'twin-'+k;
+    const el = document.getElementById(id);
+    if(el) el.value=v;
+    const lbl = document.getElementById(k+'-val');
+    if(lbl) lbl.textContent=v;
+  });
+  runTwinSimulate();
+}
+
+// ============================================================
+// XAI — GET /patients/{id}/risk
+// ============================================================
+async function loadXAISection(){
+  const p = patientsData[currentPt];
+  if(!p) return;
+  const d = await apiFetch(`/patients/${p.id}/risk`);
+  if(!d) return;
+  renderXAICharts(d);
+  renderXAIExplanation(d);
+}
+
+function initXAICharts(){ loadXAISection(); }
+
+function renderXAICharts(d){
+  destroyChart('xaiChart'); destroyChart('shapChart');
+  const labels = Object.keys(d.factors);
+  const vals   = Object.values(d.factors);
+  const shap   = Object.values(d.shap_values);
+  charts.xai = new Chart(document.getElementById('xaiChart'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,
+      backgroundColor:['#0D9488','#DC2626','#EA580C','#F43F5E','#2563EB','#059669','#14B8A6','#1E3A5F','#64748B'],
+      borderWidth:3,borderColor:'#FFFFFF',hoverOffset:6}]},
+    options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+  charts.shap = new Chart(document.getElementById('shapChart'),{
+    type:'bar',
+    data:{labels,datasets:[{data:shap,
+      backgroundColor:shap.map(v=>v>0?'rgba(220,38,38,.7)':'rgba(5,150,105,.7)'),
+      borderWidth:0,borderRadius:4}]},
+    options:{indexAxis:'y',...chartDefaults(),
+      scales:{x:{...axisDef()},y:{...axisDef()}},plugins:{legend:{display:false}}}
+  });
+}
+
+function renderXAIExplanation(d){
+  const sorted = Object.entries(d.factors).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('xaiExplanation').innerHTML=`
+    <div style="background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:6px">PRIMARY RISK CHAIN</div>
+      <div style="color:var(--navy)">${d.risk_chain} = <strong style="color:var(--red)">Elevated Cardiovascular Risk</strong></div>
+    </div>
+    <div style="line-height:2;color:var(--muted)">
+      ${sorted.filter(([,v])=>v>3).map(([k,v])=>`
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:155px;color:var(--text)">${k}</span>
+          <div class="risk-bar" style="flex:1"><div class="risk-fill" style="width:${Math.min(100,v*2.5)}%;background:${v>20?'var(--red)':v>10?'var(--yellow)':'var(--primary)'}"></div></div>
+          <span style="width:28px;color:var(--muted);font-size:11px">+${v}</span>
+        </div>`).join('')}
+    </div>
+    <div style="margin-top:12px;padding:10px;background:rgba(13,148,136,.05);border-radius:6px;font-size:12px;color:var(--muted)">
+      &#8505;&#65039; Model confidence: <strong style="color:var(--navy)">${d.model_confidence}%</strong> &middot; Framingham-inspired risk engine
+    </div>`;
+}
+
+// ============================================================
+// RECOMMENDATIONS — GET /patients/{id}/recommendations
+// ============================================================
+async function loadRecsSection(){
+  const p = patientsData[currentPt];
+  if(!p) return;
+  const d = await apiFetch(`/patients/${p.id}/recommendations`);
+  if(!d) return;
+  document.getElementById('rec-diet').innerHTML      = d.diet.map(r=>`&bull; ${r}`).join('<br>');
+  document.getElementById('rec-exercise').innerHTML  = d.exercise.map(r=>`&bull; ${r}`).join('<br>');
+  document.getElementById('rec-meds').innerHTML      = d.medications.map(r=>`&bull; ${r}`).join('<br>');
+  document.getElementById('rec-lifestyle').innerHTML = d.lifestyle.map(r=>`&bull; ${r}`).join('<br>');
+  document.getElementById('rec-plan').innerHTML = (d.action_plan||[]).map(w=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">${w.done?'&#9989;':'&#9633;'}</span>
+      <div><div style="font-size:12px;font-weight:600;color:var(--navy)">${w.week}</div>
+      <div style="font-size:12px;color:var(--muted)">${w.task}</div></div>
+    </div>`).join('');
+}
+
+function renderRecommendations(){ loadRecsSection(); }
+
+// ============================================================
+// WEARABLES — polls GET /patients/{id}/vitals every 2 s
+// ============================================================
+function startVitalsPoll(){
+  if(vitalsTimer) clearInterval(vitalsTimer);
+  fetchVitals();
+  vitalsTimer = setInterval(fetchVitals, 2000);
+}
+
+async function fetchVitals(){
+  const p = patientsData[currentPt];
+  if(!p) return;
+  const v = await apiFetch(`/patients/${p.id}/vitals`);
+  if(!v) return;
+  setText('w-hr',   v.heart_rate);
+  setText('w-spo2', v.spo2);
+  setText('w-bp',   `${v.systolic_bp}/${v.diastolic_bp}`);
+  setText('w-temp', v.temperature);
+  setBar('w-hr-bar',   v.heart_rate/200*100);
+  setBar('w-spo2-bar', v.spo2);
+  setBar('w-bp-bar',   (v.systolic_bp-80)/130*100);
+  setBar('w-temp-bar', (v.temperature-35)/5*100);
+  if(v.steps_today) setText('w-steps', v.steps_today.toLocaleString());
+  // Update live HR sparkline
+  if(charts.liveHR){
+    const d = charts.liveHR.data.datasets[0].data;
+    d.push(v.heart_rate); d.shift();
+    charts.liveHR.update('none');
+  }
+}
+
+function setText(id,val){ const el=document.getElementById(id); if(el) el.textContent=val; }
+function setBar(id,pct){ const el=document.getElementById(id); if(el) el.style.width=Math.min(100,Math.max(0,pct))+'%'; }
+
+function renderWearables(){
+  const p = patientsData[currentPt];
+  const devs = p?.devices || ['No devices connected'];
+  const iconMap = {'Apple':'&#8987;','Samsung':'&#8987;','Garmin':'&#8987;','Fitbit':'&#8987;','Whoop':'&#8987;','ECG Patch':'&#128243;','Glucose':'&#128137;','BP Cuff':'&#129514;','Withings':'&#8987;'};
+  const icon = n => Object.entries(iconMap).find(([k])=>n.includes(k))?.[1]||'&#128225;';
+  document.getElementById('devicesList').innerHTML = devs.map(d=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">${icon(d)}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--navy)">${d}</div>
+        <div style="font-size:11px;color:var(--green)">Connected &middot; Streaming</div>
+      </div>
+    </div>`).join('');
+}
+
+function initWearableCharts(){
+  const vals = Array.from({length:24},()=>Math.round(25+Math.random()*30));
+  setTimeout(()=>{
+    destroyChart('hrvChart');
+    charts.hrv = new Chart(document.getElementById('hrvChart'),{
+      type:'bar',
+      data:{labels:Array.from({length:24},(_,i)=>`${i}h`),datasets:[{data:vals,backgroundColor:'rgba(13,148,136,.55)',borderWidth:0,borderRadius:4}]},
+      options:{...chartDefaults(),scales:{x:{...axisDef()},y:{...axisDef(),title:{display:true,text:'ms',color:'#64748B'}}},plugins:{legend:{display:false}}}
+    });
+  },200);
+}
+
+// ============================================================
+// LIVE ECG ANIMATION
+// ============================================================
+function startLiveECG(){
+  const canvas = document.getElementById('ecgCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width  = canvas.offsetWidth||600;
+  canvas.height = 100;
+  let t = 0;
+  function ecgWave(t){
+    const m = t%100;
+    if(m<10) return Math.sin(m*Math.PI/10)*2;
+    if(m<12) return -8;
+    if(m<14) return 30;
+    if(m<16) return -15;
+    if(m<20) return Math.sin((m-16)*Math.PI/4)*3;
+    return 0;
+  }
+  setInterval(()=>{
+    ctx.fillStyle='rgba(240,244,248,.6)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle='#059669'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let x=0;x<canvas.width;x++){
+      const y=50-ecgWave(t+x*0.5)*1.2;
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    t+=2;
+  },50);
+}
+
+// ============================================================
+// POPULATION — GET /population
+// ============================================================
+async function loadPopSection(){
+  const d = await apiFetch('/population');
+  if(!d) return;
+  destroyChart('popAgeChart'); destroyChart('popTrendChart');
+  const ageLabels = Object.keys(d.age_group_avg_risk);
+  const ageVals   = Object.values(d.age_group_avg_risk);
+  charts.popAge = new Chart(document.getElementById('popAgeChart'),{
+    type:'bar',
+    data:{labels:ageLabels,datasets:[{label:'Avg Risk Score',data:ageVals,
+      backgroundColor:ageVals.map(v=>v>=60?'rgba(220,38,38,.65)':v>=35?'rgba(234,88,12,.65)':'rgba(5,150,105,.65)'),
+      borderRadius:4,borderWidth:0}]},
+    options:{...chartDefaults(),scales:{x:{...axisDef()},y:{...axisDef(),max:100,title:{display:true,text:'Avg Risk',color:'#64748B'}}},plugins:{legend:{display:false}}}
+  });
+  charts.popTrend = new Chart(document.getElementById('popTrendChart'),{
+    type:'line',
+    data:{labels:d.trend_months,datasets:[
+      {label:'Hypertension',data:d.hypertension_trend,borderColor:'#DC2626',tension:.4,fill:false,borderWidth:2},
+      {label:'Diabetes',    data:d.diabetes_trend,    borderColor:'#EA580C',tension:.4,fill:false,borderWidth:2},
+      {label:'Arrhythmia',  data:d.arrhythmia_trend,  borderColor:'#F43F5E',tension:.4,fill:false,borderWidth:2}
+    ]},
+    options:{...chartDefaults(),scales:{x:{...axisDef()},y:{...axisDef(),title:{display:true,text:'% of patients',color:'#64748B'}}},
+      plugins:{legend:{display:true,labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+  renderGeoHeatmap();
+  renderPopRiskFactors(d.risk_factors_ranked);
+}
+
+function initPopCharts(){ loadPopSection(); }
+
+function renderGeoHeatmap(){
+  const zones=['Zone A','Zone B','Zone C','Zone D','Zone E','Zone F','Zone G','Zone H','Zone I'];
+  const risks=[88,45,72,32,91,55,67,23,78];
+  document.getElementById('geoHeatmap').innerHTML=zones.map((a,i)=>{
+    const r=risks[i];
+    const col=r>70?`rgba(220,38,38,${.25+r/250})`:r>40?`rgba(234,88,12,${.25+r/250})`:`rgba(5,150,105,${.25+r/250})`;
+    return `<div title="${a}: Risk ${r}" style="background:${col};border-radius:6px;padding:10px 8px;font-size:11px;text-align:center;cursor:pointer;flex:1 1 calc(33% - 4px);min-width:80px;border:1px solid var(--border)">
+      <div style="font-weight:600;color:var(--navy)">${a}</div><div style="font-size:15px;font-weight:700;color:var(--navy)">${r}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPopRiskFactors(factors){
+  if(!factors) return;
+  document.getElementById('popRiskFactors').innerHTML=factors.map(f=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="width:160px;color:var(--muted)">${f.name}</span>
+      <div class="prog-bar"><div class="prog-fill" style="width:${f.pct}%;background:${f.pct>=60?'var(--red)':f.pct>=40?'var(--yellow)':'var(--primary)'}"></div></div>
+      <span style="width:36px;color:var(--navy);font-weight:600">${f.pct}%</span>
+    </div>`).join('');
+}
+
+// ============================================================
+// RESOURCES — GET /resources
+// ============================================================
+async function loadResourceSection(){
+  const d = await apiFetch('/resources');
+  if(!d) return;
+  destroyChart('admissionsChart'); destroyChart('resourceChart');
+  const days     = Array.from({length:30},(_,i)=>`Day ${i+1}`);
+  const forecast = d.admission_forecast_30d||[];
+  const actual   = forecast.slice(0,15);
+  charts.admissions = new Chart(document.getElementById('admissionsChart'),{
+    type:'line',
+    data:{labels:days,datasets:[
+      {label:'Actual',       data:[...actual,...Array(15).fill(null)],borderColor:'#0D9488',fill:false,tension:.3,pointRadius:3,borderWidth:2,pointBackgroundColor:'#0D9488'},
+      {label:'Forecast (ML)',data:forecast,borderColor:'#1E3A5F',borderDash:[6,4],fill:false,tension:.3,pointRadius:2,borderWidth:2},
+      {label:'Upper Bound',  data:forecast.map(v=>v+6),borderColor:'rgba(30,58,95,.15)',fill:'+1',tension:.3,pointRadius:0,backgroundColor:'rgba(30,58,95,.06)'},
+      {label:'Lower Bound',  data:forecast.map(v=>v-6),borderColor:'rgba(30,58,95,.15)',fill:false,tension:.3,pointRadius:0}
+    ]},
+    options:{...chartDefaults(),scales:{x:{...axisDef()},y:{...axisDef()}},plugins:{legend:{display:true,labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+  const rL=['ICU Beds','Cardio Staff','Cath Lab','Ventilators','Monitors','Defib Units'];
+  const rC=[d.icu_beds?.pct,d.cardio_staff?.pct,d.cath_lab?.pct,d.ventilators?.pct,d.monitors?.pct,d.defib_units?.pct];
+  charts.resource = new Chart(document.getElementById('resourceChart'),{
+    type:'bar',
+    data:{labels:rL,datasets:[
+      {label:'Current (%)',  data:rC,              backgroundColor:'rgba(13,148,136,.6)',borderWidth:0,borderRadius:4},
+      {label:'Predicted Need',data:[85,80,90,72,88,85],backgroundColor:'rgba(220,38,38,.35)', borderWidth:0,borderRadius:4}
+    ]},
+    options:{...chartDefaults(),scales:{x:{...axisDef()},y:{...axisDef(),max:100,title:{display:true,text:'% utilization',color:'#64748B'}}},
+      plugins:{legend:{display:true,labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+  document.getElementById('staffingRecs').innerHTML=(d.staffing_recommendations||[]).map(r=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px;background:rgba(13,148,136,.04);border:1px solid var(--border);border-radius:8px;flex:1 1 calc(50% - 6px)">
+      <span style="font-size:20px">&#128203;</span><span style="color:var(--muted);font-size:13px">${r}</span>
+    </div>`).join('');
+}
+
+function initResourceCharts(){ loadResourceSection(); }
+
+// ============================================================
+// GAMIFIED (driven by patient data)
+// ============================================================
+function initGamified(){
+  destroyChart('progressChart');
+  const p      = patientsData[currentPt];
+  const score  = p ? Math.max(10,Math.min(99,100-p.risk)) : 65;
+  const medPct = p?.medication_adherence||60;
+  const exPct  = p ? Math.min(100,Math.round(p.exercise_min_day/60*100)) : 40;
+  const dPct   = p ? p.diet_score*10 : 60;
+  const sPct   = p ? Math.min(100,Math.round(p.sleep_hours/9*100)) : 55;
+  setText('healthScore', score);
+  const progBars = document.querySelectorAll('#sec-gamified .prog-fill');
+  [medPct,exPct,dPct,sPct].forEach((v,i)=>{ if(progBars[i]) progBars[i].style.width=v+'%'; });
+  const badges=[
+    {icon:'&#128138;',label:'Medicated',   earned:medPct>=60},
+    {icon:'&#127939;',label:'Active',      earned:exPct>=40},
+    {icon:'&#129367;',label:'Healthy Eater',earned:dPct>=70},
+    {icon:'&#128564;',label:'Good Sleep',  earned:sPct>=78},
+    {icon:'&#128683;',label:'Smoke-Free',  earned:p?.smoking==='never'},
+    {icon:'&#10084;&#65039;',label:'Heart Hero',earned:score>=75},
+    {icon:'&#127919;',label:'30-Day Streak',earned:false},
+    {icon:'&#128202;',label:'Data Champ',  earned:true},
+    {icon:'&#128170;',label:'Consistent',  earned:medPct>=80},
+  ];
+  document.getElementById('badgesContainer').innerHTML=badges.map(b=>`
+    <div style="text-align:center">
+      <div class="badge ${b.earned?'badge-earned':'badge-locked'}" title="${b.label}">${b.icon}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px">${b.label}</div>
+    </div>`).join('');
+  document.getElementById('challengesList').innerHTML=[
+    {name:'7-Day Walk Streak',prog:Math.min(7,Math.round((p?.steps_today||3000)/3000)),total:7, col:'var(--green)'},
+    {name:'Take Meds 10 Days',prog:Math.round((p?.medication_adherence||60)/10),total:10,col:'var(--primary)'},
+    {name:'Log BP Daily (30)',prog:18,total:30,col:'var(--yellow)'},
+  ].map(c=>`<div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+      <span style="color:var(--text)">${c.name}</span><span style="color:var(--muted)">${c.prog}/${c.total}</span></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${(c.prog/c.total*100).toFixed(0)}%;background:${c.col}"></div></div>
+  </div>`).join('');
+  charts.progress = new Chart(document.getElementById('progressChart'),{
+    type:'radar',
+    data:{labels:['Exercise','Diet','Meds','Sleep','Hydration','Stress Mgmt'],datasets:[
+      {label:'This Week',data:[exPct,dPct,medPct,sPct,75,Math.max(10,100-((p?.stress_level||5)*10))],
+       borderColor:'#0D9488',backgroundColor:'rgba(13,148,136,.12)',pointBackgroundColor:'#0D9488',borderWidth:2},
+      {label:'Last Week',data:[Math.max(10,exPct-12),Math.max(10,dPct-10),Math.max(10,medPct-8),Math.max(10,sPct-8),65,40],
+       borderColor:'#CBD5E1',backgroundColor:'rgba(203,213,225,.08)',pointBackgroundColor:'#94A3B8',borderWidth:2,borderDash:[4,4]}
+    ]},
+    options:{responsive:true,scales:{r:{grid:{color:'rgba(15,23,42,.08)'},pointLabels:{color:'#334155',font:{size:10}},ticks:{color:'#64748B',backdropColor:'transparent',stepSize:20},min:0,max:100}},
+      plugins:{legend:{display:true,labels:{color:'#64748B',font:{size:11},boxWidth:12}}}}
+  });
+  document.getElementById('leaderboard').innerHTML=[
+    {rank:'&#127937;',name:'Patient #A847',score:94},
+    {rank:'&#129352;',name:'Patient #C231',score:89},
+    {rank:'&#129353;',name:'Patient #F119',score:85},
+    {rank:'4',name:'You',score,me:true},
+    {rank:'5',name:'Patient #D445',score:Math.max(10,score-6)},
+  ].map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--border);border-radius:${r.me?'6px':'0'};${r.me?'background:rgba(13,148,136,.06);font-weight:700;color:var(--navy)':'color:var(--muted)'}">
+    <span style="width:24px">${r.rank}</span><span style="flex:1">${r.name}${r.me?' (You)':''}</span>
+    <span style="font-weight:700">${r.score}</span>
+  </div>`).join('');
+}
+
+// ============================================================
+// VOICE ASSISTANT
+// ============================================================
+const VOICE_ANSWERS={
+  risk: p=>`${p.name}'s cardiovascular risk score is ${p.risk} out of 100, classified as ${p.risk_level} risk. Key contributors include blood pressure of ${p.systolic_bp} mmHg and cholesterol of ${p.cholesterol_total} millimoles per litre.`,
+  meds: p=>`${p.name} is currently on ${p.medications.length} medications: ${p.medications.join(', ')}. Current adherence is ${p.medication_adherence} percent.`,
+  bp:   p=>`${p.name}'s blood pressure is ${p.systolic_bp} over ${p.diastolic_bp} millimetres of mercury. This is ${p.systolic_bp>=140?'elevated and requires attention':'within manageable range'}.`,
+  default:p=>`${p.name} is a ${p.age}-year-old ${p.gender} with ${p.risk_level.toLowerCase()} cardiovascular risk, scoring ${p.risk} out of 100. Conditions include: ${p.conditions.join(', ')}. Medications: ${p.medications.join(', ')}.`
+};
+
+function renderVoiceAssistant(){
+  document.getElementById('quickPhrases').innerHTML=
+    ['Summarize patient','Check risk score','Review medications','Blood pressure status','Give recommendations']
+    .map(ph=>`<button class="btn btn-ghost" style="font-size:11px" onclick="handleVoiceInput('${ph}')">${ph}</button>`).join('');
+  document.getElementById('sampleQs').innerHTML=
+    ['"What is the patient\'s current risk score?"','"Why is this patient high risk?"','"List current medications"','"Summarise health status"','"What are the recommendations?"']
+    .map(q=>`<div>${q}</div>`).join('');
+}
+
+function handleVoiceInput(text){
+  const p = patientsData[currentPt];
+  if(!p){ document.getElementById('vaTranscript').textContent='No patient data loaded.'; return; }
+  const l = text.toLowerCase();
+  const ans = l.includes('risk')?VOICE_ANSWERS.risk(p):l.includes('med')?VOICE_ANSWERS.meds(p):(l.includes('bp')||l.includes('blood')||l.includes('pressure'))?VOICE_ANSWERS.bp(p):VOICE_ANSWERS.default(p);
+  document.getElementById('vaTranscript').innerHTML=`<strong style="color:var(--navy)">You:</strong> ${text}<br><br><strong style="color:var(--primary)">AI:</strong> ${ans}`;
+  vaHistory.unshift({q:text,a:ans,time:new Date().toLocaleTimeString()});
+  renderVAHistory();
+  speakText(ans);
+}
+
+function renderVAHistory(){
+  document.getElementById('vaHistory').innerHTML=vaHistory.slice(0,5).map(h=>`
+    <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="color:var(--muted);font-size:11px">${h.time}</div>
+      <div style="color:var(--navy)">Q: ${h.q}</div>
+      <div style="color:var(--primary);font-size:12px">A: ${h.a.slice(0,130)}&#8230;</div>
+    </div>`).join('');
+}
+
+function toggleVoice(){
+  if('webkitSpeechRecognition' in window||'SpeechRecognition' in window){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    recognition=new SR();
+    recognition.lang=document.getElementById('vaLang')?.value||'en-US';
+    recognition.onresult=e=>handleVoiceInput(e.results[0][0].transcript);
+    recognition.start();
+    document.getElementById('vaStatus').textContent='&#127908; Listening&#8230;';
+    document.getElementById('vaBubble').classList.add('speaking');
+    recognition.onend=()=>{ document.getElementById('vaStatus').textContent='Click microphone to speak'; document.getElementById('vaBubble').classList.remove('speaking'); };
+  } else { handleVoiceInput('Summarize patient health'); }
+}
+
+function speakText(text){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang  = document.getElementById('vaLang')?.value||'en-US';
+  u.rate  = parseFloat(document.getElementById('speechRate')?.value||1);
+  u.pitch = parseFloat(document.getElementById('speechPitch')?.value||1);
+  document.getElementById('vaBubble').classList.add('speaking');
+  u.onend=()=>document.getElementById('vaBubble').classList.remove('speaking');
+  window.speechSynthesis.speak(u);
+}
+
+function setVoiceLang(){ if(recognition) recognition.lang=document.getElementById('vaLang').value; }
+
+// ============================================================
+// BLOCKCHAIN — GET /audit
+// ============================================================
+async function loadBlockchainSection(){
+  const d = await apiFetch('/audit');
+  renderAccessControls();
+  renderComplianceStatus();
+  renderBlockchainChain(d?.blocks||[]);
+  document.getElementById('accessLog').innerHTML=(d?.access_log||[]).map(l=>`<div>${l}</div>`).join('');
+  initSharingChart();
+}
+
+function renderBlockchain(){ loadBlockchainSection(); }
+
+function renderAccessControls(){
+  const parties=[
+    {icon:'&#128104;&#8205;&#9877;&#65039;',name:'Treating Cardiologist',access:true, level:'Full access'},
+    {icon:'&#128105;&#8205;&#9877;&#65039;',name:'Nursing Staff',         access:true, level:'Vitals only'},
+    {icon:'&#127973;&#65039;',              name:'Hospital System',       access:true, level:'Read-only'},
+    {icon:'&#128300;',                      name:'Research Institute',    access:false,level:'Anonymised only'},
+    {icon:'&#128138;',                      name:'Pharmacy Partner',      access:true, level:'Medications only'},
+    {icon:'&#128241;',                      name:'Patient App',           access:true, level:'Own data only'},
+  ];
+  document.getElementById('accessControls').innerHTML=parties.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:16px">${p.icon}</span>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--navy)">${p.name}</div>
+      <div style="font-size:11px;color:var(--muted)">${p.level}</div></div>
+      <label style="position:relative;display:inline-block;width:36px;height:20px;cursor:pointer">
+        <input type="checkbox" ${p.access?'checked':''} style="display:none" onchange="logAccessChange('${p.name}',this.checked)">
+        <span style="position:absolute;inset:0;border-radius:10px;background:${p.access?'var(--green)':'var(--border)'};transition:.2s"></span>
+        <span style="position:absolute;top:3px;left:${p.access?'19':'3'}px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s"></span>
+      </label>
+    </div>`).join('');
+}
+
+function renderComplianceStatus(){
+  document.getElementById('complianceStatus').innerHTML=[
+    {icon:'&#9989;',label:'HIPAA Compliant',   status:'Verified'},
+    {icon:'&#9989;',label:'POPIA (South Africa)',status:'Compliant'},
+    {icon:'&#9989;',label:'GDPR Aligned',      status:'Active'},
+    {icon:'&#9989;',label:'ISO 27001',          status:'Certified'},
+    {icon:'&#128274;',label:'AES-256 Encryption',status:'Active'},
+    {icon:'&#128203;',label:'Audit Logging',   status:'Enabled'},
+    {icon:'&#128273;',label:'2FA Required',    status:'Enforced'},
+  ].map(c=>`<div style="display:flex;gap:8px;padding:3px 0">${c.icon} <span style="color:var(--muted)">${c.label}</span><span style="margin-left:auto;color:var(--green)">${c.status}</span></div>`).join('');
+}
+
+function renderBlockchainChain(blocks){
+  document.getElementById('blockChain').innerHTML=blocks.map((b,i)=>`
+    ${i>0?'<div class="chain-link">&#8594;</div>':''}
+    <div class="block">
+      <div style="font-size:11px;font-weight:600;color:var(--primary)">#${b.block} ${b.event}</div>
+      <div style="font-size:10px;color:var(--muted)">By: ${b.user}</div>
+      <div style="font-size:10px;color:var(--muted)">Hash: <span class="block-hash">${b.hash}</span></div>
+      <div style="font-size:10px;color:var(--muted)">Prev: ${b.prev}</div>
+      <div style="font-size:10px;color:var(--muted)">${b.timestamp}</div>
+    </div>`).join('');
+}
+
+function initSharingChart(){
+  destroyChart('sharingChart');
+  charts.sharing=new Chart(document.getElementById('sharingChart'),{
+    type:'doughnut',
+    data:{labels:['Treating Physicians','Nursing Staff','Hospital Systems','Research (Anon)','Patient Access'],
+      datasets:[{data:[38,22,20,10,10],backgroundColor:['#0D9488','#059669','#2563EB','#F43F5E','#14B8A6'],borderWidth:3,borderColor:'#FFFFFF',hoverOffset:5}]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#64748B',font:{size:10},boxWidth:10}}}}
+  });
+}
+
+function updateConsent(){
+  const h='0x'+Math.random().toString(16).slice(2,18);
+  alert(`Consent settings updated and recorded on the blockchain.\n\nTransaction hash: ${h}`);
+  loadBlockchainSection();
+}
+
+function logAccessChange(name,allowed){
+  const logs=document.getElementById('accessLog');
+  logs.innerHTML=`<div style="color:var(--yellow)">${new Date().toISOString().slice(0,19)} &#183; CONSENT &#183; ${name} &#8594; ${allowed?'GRANTED':'REVOKED'} &#183; Patient action</div>`+logs.innerHTML;
+}
+
+// ============================================================
+// CHART UTILITIES
+// ============================================================
+function chartDefaults(){
+  return {responsive:true,plugins:{legend:{display:false},
+    tooltip:{backgroundColor:'rgba(30,58,95,.92)',borderColor:'#CBD5E1',borderWidth:1,titleColor:'#fff',bodyColor:'#CBD5E1',padding:10,cornerRadius:8}}};
+}
+function axisDef(){
+  return {ticks:{color:'#64748B',font:{size:10}},grid:{color:'rgba(15,23,42,.06)'},border:{color:'rgba(15,23,42,.06)'}};
+}
+function destroyChart(id){ const c=Chart.getChart(id); if(c) c.destroy(); }
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg){
+  const t=document.createElement('div');
+  t.innerHTML=msg;
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);padding:12px 20px;border-radius:8px;font-size:13px;z-index:999;box-shadow:0 4px 12px rgba(15,23,42,.12)';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2500);
+}
+
+// ============================================================
+// STARTUP
+// ============================================================
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>

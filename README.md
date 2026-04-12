@@ -1,107 +1,106 @@
-# healthsync-analytics
-A complete data engineering pipeline that processes healthcare data from multiple sources, applies AI/ML insights, and delivers analytics through a cloud-native platform
+# HealthSync Analytics
 
-<div align="center">
+Real-time cardiovascular health monitoring and analytics platform. A FastAPI backend paired with a single-page dashboard delivering live patient data, AI-driven risk insights, and interactive clinical decision support.
 
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)
-![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
-![Version](https://img.shields.io/badge/version-2.0.0-green.svg?style=for-the-badge)
+---
 
-**Real-time healthcare monitoring and predictive analytics platform**
+## Features
 
-[Live Demo](https://healthsync-analytics.up.railway.app) • [API Docs](https://healthsync-analytics.up.railway.app/docs) • [Report Bug](https://github.com/MpiloG29/healthsync-analytics/issues) • [Request Feature](https://github.com/MpiloG29/healthsync-analytics/issues)
+### 1. Digital Twin
+Interactive radar model of each patient's cardiovascular system. Adjust exercise, diet, stress, medication adherence, sleep, and smoking status via sliders — the backend recalculates predicted outcomes and organ-level risk in real time.
 
-</div>
+### 2. Explainable AI Risk Insights
+Framingham-inspired risk engine breaks down every contributing factor (age, BP, cholesterol, HDL, diabetes, smoking, BMI, sedentary lifestyle) with a SHAP-style horizontal bar chart and a plain-language risk chain explanation.
 
-## 📖 Table of Contents
+### 3. Personalized Recommendations
+Per-patient diet, exercise, medication, and lifestyle guidance generated server-side from actual lab values, BMI, smoking status, and adherence scores. Includes a 4-week action plan.
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Live Deployment](#-live-deployment)
-- [Quick Start](#-quick-start)
-- [Architecture](#-architecture)
-- [API Reference](#-api-reference)
-- [Dashboard Guide](#-dashboard-guide)
-- [Local Development](#-local-development)
-- [Deployment](#-deployment)
-- [Project Structure](#-project-structure)
-- [Algorithm](#-algorithm)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Acknowledgments](#-acknowledgments)
-- [Contact](#-contact)
+### 4. Wearable & IoT Integration
+Live vitals streamed from `/patients/{id}/vitals` every 2 seconds — heart rate, SpO₂, blood pressure, temperature, HRV, and step count. Animated ECG strip rendered on canvas. Connected device list pulled from patient records.
 
-## 🎯 Overview
+### 5. Population Health Analytics
+Age-group risk averages, disease prevalence rates, and 12-month trend lines all computed from the live patient database. Geographic risk heatmap and ranked risk-factor breakdown.
 
-**HealthSync Analytics** is a modern, cloud-based healthcare monitoring system designed to provide real-time analytics and predictive risk assessment for cardiovascular diseases. The platform combines a powerful FastAPI backend with an intuitive dashboard frontend, enabling healthcare professionals to monitor patient data and predict potential health risks efficiently.
+### 6. Emergency Alert System
+Rule-based alert engine fires on SpO₂ < 94%, systolic BP ≥ 170 mmHg, atrial fibrillation on ECG, heart rate ≥ 95 bpm, medication adherence < 60%, and high-risk patients with < 2,000 steps. Configurable thresholds with provider notification settings.
 
-### Key Objectives
-- ✅ Provide real-time patient analytics visualization
-- ✅ Predict cardiovascular risk based on clinical parameters
-- ✅ Offer an intuitive, responsive web interface
-- ✅ Ensure seamless cloud deployment and scalability
-- ✅ Facilitate easy integration with existing healthcare systems
+### 7. Predictive Hospital Resource Planning
+30-day admission forecast with ML-style confidence bands. Real-time ICU, staff, cath-lab, and equipment utilisation pulled from patient ward assignments. Staffing recommendations generated server-side.
 
-## ✨ Features
+### 8. Gamified Patient Engagement
+Health score derived from risk score, badge system, active challenges, and a weekly radar comparison — all driven by real patient adherence and activity data. Anonymised leaderboard.
 
-### 📊 **Analytics Dashboard**
-- Real-time patient statistics monitoring
-- Interactive charts and data visualizations
-- Live API status indicators
-- Recent predictions history viewer
-- Mobile-responsive design
+### 9. Multilingual Voice Assistant
+Browser Web Speech API for microphone input and text-to-speech output. Supports English, French, Spanish, isiZulu, isiXhosa, Arabic, and Portuguese. Natural-language answers generated from live patient data.
 
-### 🔮 **Risk Prediction Engine**
-- Cardiovascular risk assessment based on age and blood pressure
-- Three-tier risk classification (Low/Medium/High)
-- Detailed prediction results with recommendations
-- Prediction history tracking
-- Real-time calculation with instant feedback
+### 10. Secure Data Sharing & Blockchain Audit
+Per-provider consent toggles, HIPAA/POPIA/GDPR compliance status, AES-256 encryption indicator, and a 7-block immutable audit chain with timestamped access logs served from `/audit`.
 
-### 🔧 **API Backend**
-- RESTful API with complete CRUD operations
-- Comprehensive CORS support
-- Automatic API documentation (Swagger/OpenAPI)
-- Health monitoring endpoints
-- Production-ready error handling
+---
 
-### 🚀 **Deployment & DevOps**
-- Automatic cloud deployment via Railway
-- Continuous integration ready
-- Environment-based configuration
-- Zero-downtime deployment capability
-- Comprehensive logging and monitoring
+## Tech Stack
 
-### 🛡️ **Security & Reliability**
-- CORS configuration for cross-origin requests
-- Input validation and sanitization
-- Error handling with user-friendly messages
-- Rate limiting ready
-- Health check endpoints for monitoring
+| Layer | Technology |
+|---|---|
+| Backend | Python 3.12 · FastAPI · Uvicorn |
+| Frontend | Vanilla JS · Chart.js 4 · Web Speech API |
+| Deployment | Railway |
+| Risk Engine | Framingham-inspired cardiovascular risk model |
 
-## 🌐 Live Deployment
+---
 
-| Component | URL | Description |
-|-----------|-----|-------------|
-| **Live Application** | [https://healthsync-analytics.up.railway.app](https://healthsync-analytics.up.railway.app) | Main application entry point |
-| **API Documentation** | [https://healthsync-analytics.up.railway.app/docs](https://healthsync-analytics.up.railway.app/docs) | Interactive Swagger UI |
-| **Dashboard** | [https://healthsync-analytics.up.railway.app/dashboard.html](https://healthsync-analytics.up.railway.app/dashboard.html) | Primary user interface |
-| **API Health Check** | [https://healthsync-analytics.up.railway.app/health](https://healthsync-analytics.up.railway.app/health) | Service status endpoint |
-| **GitHub Repository** | [https://github.com/MpiloG29/healthsync-analytics](https://github.com/MpiloG29/healthsync-analytics) | Source code repository |
+## API Endpoints
 
-## 🚀 Quick Start
+| Method | Path | Description |
+|---|---|---|
+| GET | `/health` | Service health check |
+| GET | `/patients` | All patients with computed risk scores |
+| GET | `/patients/{id}` | Full patient record |
+| GET | `/patients/{id}/vitals` | Live vitals with physiological noise |
+| GET | `/patients/{id}/risk` | XAI risk factors + SHAP values |
+| GET | `/patients/{id}/recommendations` | Personalised preventive recommendations |
+| GET | `/patients/{id}/twin` | Digital twin baseline |
+| POST | `/twin/simulate` | Run what-if scenario |
+| GET | `/analytics` | Aggregate dashboard metrics |
+| GET | `/alerts` | Active rule-based alerts |
+| GET | `/population` | Population health aggregations |
+| GET | `/resources` | Hospital resource utilisation + forecast |
+| GET | `/audit` | Blockchain audit trail |
+| POST | `/predict` | Standalone cardiovascular risk prediction |
 
-### Prerequisites
-- **Python 3.8+** (Download from [python.org](https://python.org))
-- **Git** (Download from [git-scm.com](https://git-scm.com))
-- **Modern Web Browser** (Chrome, Firefox, Edge, or Safari)
-- **Internet Connection** (for cloud deployment)
+Interactive docs available at `/docs`.
 
-### Installation & Local Setup
+---
 
-#### 1. Clone the Repository
+## Running Locally
+
 ```bash
-git clone https://github.com/MpiloG29/healthsync-analytics.git
-cd healthsync-analytics
+pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8001 --reload
+```
+
+Open `dashboard.html` in a browser. The dashboard connects to `http://localhost:8001` automatically.
+
+---
+
+## Project Structure
+
+```
+healthsync-analytics/
+├── app.py            # FastAPI backend — risk engine, all endpoints
+├── dashboard.html    # Single-page dashboard — all 10 feature panels
+├── Procfile          # Railway process definition
+├── requirements.txt  # Python dependencies
+├── runtime.txt       # Python version pin
+└── README.md
+```
+
+---
+
+## Deployment
+
+Deployed on [Railway](https://railway.app). Every push to `main` triggers an automatic redeploy via the `Procfile`.
+
+```
+web: uvicorn app:app --host 0.0.0.0 --port $PORT
+```
