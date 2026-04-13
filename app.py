@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
@@ -476,14 +477,10 @@ class TwinSimulateRequest(BaseModel):
 # ============================================================
 # ENDPOINTS
 # ============================================================
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {
-        "service": "HealthSync Analytics API v3",
-        "status": "online",
-        "patients": len(PATIENTS_COMPUTED),
-        "environment": os.getenv("RAILWAY_ENVIRONMENT", "development")
-    }
+    with open(os.path.join(os.path.dirname(__file__), "dashboard.html"), "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.get("/health")
 async def health():
